@@ -32,6 +32,7 @@
 #define INPUT_PIN A0
 #define OUTPUT_PIN 13
 #define DATA_LENGTH 10
+#define BUZZER 8
 
 int data_index = 0;
 bool peak = false;
@@ -43,6 +44,7 @@ void setup() {
 	// Setup Input & Output pin
 	pinMode(INPUT_PIN, INPUT);
 	pinMode(OUTPUT_PIN, OUTPUT);
+	pinMode(BUZZER, OUTPUT);
 }
 
 void loop() {
@@ -70,6 +72,8 @@ void loop() {
     	Serial.println(peak);
     	// Blink LED on peak
     	digitalWrite(OUTPUT_PIN, peak);
+	//Buzzer on at peak
+	if (peak) tone(BUZZER, 2000, 50);
 	}
 }
 
