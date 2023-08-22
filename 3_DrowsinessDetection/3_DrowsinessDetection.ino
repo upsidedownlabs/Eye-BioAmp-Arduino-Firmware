@@ -32,7 +32,7 @@
 #define INPUT_PIN A0
 #define OUTPUT_PIN 13
 #define DATA_LENGTH 10
-#define DROWSINESS_THRESHOLD 5000
+#define DROWSINESS_THRESHOLD 6000
 
 int data_index = 0;
 bool peak = false;
@@ -95,6 +95,9 @@ void loop() {
     // Drowsiness detection
     if(blink_interval>= DROWSINESS_THRESHOLD)
       digitalWrite(OUTPUT_PIN,  HIGH);
+
+    if(blink_interval>= DROWSINESS_THRESHOLD)
+      tone(8, 2000, 50);
   }
 }
 
