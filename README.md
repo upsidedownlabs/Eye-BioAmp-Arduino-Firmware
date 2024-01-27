@@ -9,6 +9,8 @@ Firmware for Eye BioAmp hardware from Upside Down Labs
 |3 | [DrowsinessDetection](3_DrowsinessDetection)| Drowsiness detection using eye blink detection.|
 |4 | [EOGPhotoCaptureBLE](4_EOGPhotoCaptureBLE)| EOG based photo clicking machine using ESP32 BLE.|
 |5 | [EyeBlinkDetection](5_EyeBlinkDetection)| EOG based eye blink detection.|
+|6 | [EOGDinoGame](6_EOGDinoGame)| Controlling chrome dino game using eye blinks.|
+|7 | [EOGServoControl](7_EOGServoControl)| Controlling 3D printed servo claw using eye blinks.|
 
 
 ## Examples
