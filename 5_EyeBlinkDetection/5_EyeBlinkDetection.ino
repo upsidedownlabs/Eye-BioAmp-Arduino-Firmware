@@ -93,6 +93,9 @@ bool Getpeak(float new_sample) {
 	}
 
 	// Calculate mean
+	//Instead of recalculating the mean from scratch every time, you can use a sliding mean formula for efficiency:
+        // Update mean dynamically (sliding window mean)
+        //mean = mean + (new_sample - data_buffer[data_index]) / DATA_LENGTH;
 	float sum = 0.0, mean, standard_deviation = 0.0;
 	for (int i = 0; i < DATA_LENGTH; ++i){
 		sum += data_buffer[(data_index + i) % DATA_LENGTH];
