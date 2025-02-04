@@ -78,43 +78,40 @@ void loop() {
 }
 
 bool Getpeak(float new_sample) {
-	// Buffers for data, mean, and standard deviation
-	static float data_buffer[DATA_LENGTH];
-	static float mean_buffer[DATA_LENGTH];
-	static float standard_deviation_buffer[DATA_LENGTH];
-  
-	// Check for peak
-	if (new_sample - mean_buffer[data_index] > (DATA_LENGTH*1.2) * standard_deviation_buffer[data_index]) {
-		data_buffer[data_index] = new_sample + data_buffer[data_index];
-		peak = true;
-	} else {
-		data_buffer[data_index] = new_sample;
-		peak = false;
-	}
+    // Buffers for data, mean, and standard deviation
+    static float mean = 0.0;
+    static float data_buffer[DATA_LENGTH] = {0};
+    static float mean_buffer[DATA_LENGTH] = {0};
+    static float standard_deviation_buffer[DATA_LENGTH] = {0};
 
-	// Calculate mean
-	float sum = 0.0, mean, standard_deviation = 0.0;
-	for (int i = 0; i < DATA_LENGTH; ++i){
-		sum += data_buffer[(data_index + i) % DATA_LENGTH];
-	}
-	mean = sum/DATA_LENGTH;
+    // Store old sample before replacing it
+    float oldest_sample = data_buffer[data_index];
 
-	// Calculate standard deviation
-	for (int i = 0; i < DATA_LENGTH; ++i){
-		standard_deviation += pow(data_buffer[(i) % DATA_LENGTH] - mean, 2);
-	}
+    // Check for peak
+    peak = (new_sample - mean_buffer[data_index]) > (DATA_LENGTH * 1.2 * standard_deviation_buffer[data_index]);
 
-	// Update mean buffer
-	mean_buffer[data_index] = mean;
+    // Update data buffer with new sample
+    data_buffer[data_index] = new_sample;
 
-	// Update standard deviation buffer
-	standard_deviation_buffer[data_index] =  sqrt(standard_deviation/DATA_LENGTH);
+    // Update mean using sliding window formula
+    mean += (new_sample - oldest_sample) / DATA_LENGTH;
 
-	// Update data_index
-	data_index = (data_index+1)%DATA_LENGTH;
+    // Compute standard deviation
+    float variance = 0.0;
+    for (int i = 0; i < DATA_LENGTH; ++i) {
+        float diff = data_buffer[i] - mean;
+        variance += diff * diff;  // Avoid redundant pow() call
+    }
+    float standard_deviation = sqrt(variance / DATA_LENGTH);
 
-	// Return peak
-	return peak;
+    // Update buffers
+    mean_buffer[data_index] = mean;
+    standard_deviation_buffer[data_index] = standard_deviation;
+
+    // Update circular buffer index
+    data_index = (data_index + 1) % DATA_LENGTH;
+
+    return peak;
 }
 
 // Band-Pass Butterworth IIR digital filter, generated using filter_gen.py.
