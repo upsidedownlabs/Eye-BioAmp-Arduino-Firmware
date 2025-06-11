@@ -84,7 +84,7 @@ bool Getpeak(float new_sample) {
 	static float standard_deviation_buffer[DATA_LENGTH];
   
 	// Check for peak
-	if (new_sample - mean_buffer[data_index] > (DATA_LENGTH*1.2) * standard_deviation_buffer[data_index]) {
+	if (new_sample - mean_buffer[data_index] > (DATA_LENGTH * 1.2) * standard_deviation_buffer[data_index]) {
 		data_buffer[data_index] = new_sample + data_buffer[data_index];
 		peak = true;
 	} else {
@@ -92,30 +92,31 @@ bool Getpeak(float new_sample) {
 		peak = false;
 	}
 
-	// Calculate mean
-	float sum = 0.0, mean, standard_deviation = 0.0;
-	for (int i = 0; i < DATA_LENGTH; ++i){
-		sum += data_buffer[(data_index + i) % DATA_LENGTH];
-	}
-	mean = sum/DATA_LENGTH;
+	// Update mean dynamically (sliding window mean)
+	static float mean = 0.0;
+	mean = (mean + new_sample - data_buffer[data_index]) / DATA_LENGTH;
+
+  // Update data buffer AFTER using the old value in mean calculation
+    data_buffer[data_index] = new_sample;
 
 	// Calculate standard deviation
-	for (int i = 0; i < DATA_LENGTH; ++i){
-		standard_deviation += pow(data_buffer[(i) % DATA_LENGTH] - mean, 2);
+	for (int i = 0; i < DATA_LENGTH; ++i) {
+		standard_deviation += pow(data_buffer[i] - mean, 2);
 	}
 
 	// Update mean buffer
 	mean_buffer[data_index] = mean;
 
 	// Update standard deviation buffer
-	standard_deviation_buffer[data_index] =  sqrt(standard_deviation/DATA_LENGTH);
+	standard_deviation_buffer[data_index] = sqrt(standard_deviation / DATA_LENGTH);
 
 	// Update data_index
-	data_index = (data_index+1)%DATA_LENGTH;
+	data_index = (data_index + 1) % DATA_LENGTH;
 
 	// Return peak
 	return peak;
 }
+
 
 // Band-Pass Butterworth IIR digital filter, generated using filter_gen.py.
 // Sampling rate: 75.0 Hz, frequency: [0.5, 19.5] Hz.
