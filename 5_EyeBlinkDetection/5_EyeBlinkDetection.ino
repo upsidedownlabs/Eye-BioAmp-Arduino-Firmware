@@ -94,7 +94,7 @@ bool Getpeak(float new_sample) {
 
 	// Update mean dynamically (sliding window mean)
 	static float mean = 0.0;
-	mean = mean + (new_sample - data_buffer[data_index]) / DATA_LENGTH;
+	mean = (mean + new_sample - data_buffer[data_index]) / DATA_LENGTH;
 
   // Update data buffer AFTER using the old value in mean calculation
     data_buffer[data_index] = new_sample;
