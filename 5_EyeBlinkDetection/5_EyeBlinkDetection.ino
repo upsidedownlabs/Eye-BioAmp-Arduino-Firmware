@@ -100,7 +100,6 @@ bool Getpeak(float new_sample) {
     data_buffer[data_index] = new_sample;
 
 	// Calculate standard deviation
-	float standard_deviation = 0.0;
 	for (int i = 0; i < DATA_LENGTH; ++i) {
 		standard_deviation += pow(data_buffer[i] - mean, 2);
 	}
