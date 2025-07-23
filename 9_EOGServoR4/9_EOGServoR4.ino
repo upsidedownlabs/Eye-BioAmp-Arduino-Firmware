@@ -121,7 +121,7 @@ void loop() {
     currentEOGEnvelope = EOGEnvelope(abs(filtered));
 
     // Update LED bar graph
-    for(int i = 0; i<=total_leds; i++){
+    for(int i = 0; i<total_leds; i++){
       if(i>(currentEOGEnvelope/EOG_ENVELOPE_DIVIDER - EOG_ENVELOPE_BASELINE)){
           digitalWrite(led_bar[i], LOW);
       } else {
