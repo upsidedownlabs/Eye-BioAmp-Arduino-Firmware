@@ -113,12 +113,12 @@ void loop() {
     timer += 1000000 / SAMPLE_RATE;
    
     // RAW Values
-    int sensor_value = analogRead(INPUT_PIN);
+    float sensor_value = analogRead(INPUT_PIN);
     
     float filtered = highpass(EOGFilter(Notch(sensor_value)));
     
     // EOG envelopee
-    int currentEOGEnvelope = EOGEnvelope(abs(filtered));
+    currentEOGEnvelope = EOGEnvelope(abs(filtered));
 
     // Update LED bar graph
     for(int i = 0; i<=total_leds; i++){
