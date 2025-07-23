@@ -60,7 +60,7 @@
 #define ENVELOPE_WINDOW_SIZE ((ENVELOPE_WINDOW_MS * SAMPLE_RATE) / 1000)
 
 // EOG Envelope baseline value
-// Minimum value without flexing hand
+// Minimum value without eye movement/blinks
 #define EOG_ENVELOPE_BASELINE 4
 
 // EOG Envelope divider
