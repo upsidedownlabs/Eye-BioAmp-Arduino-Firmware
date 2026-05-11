@@ -15,6 +15,7 @@ Firmware for Eye BioAmp hardware from Upside Down Labs
 |9 | [EOGServoR4](9_EOGServoR4)| Servo claw control using EOG blinks for Arduino UNO R4.|
 |10 | [EOGDinoR4](10_EOGDinoR4)| Chrome Dino game control using EOG blinks for Arduino UNO R4.|
 |11 | [EOGSlidesControl](11_EOGSlidesControl)| Presentation slide control using double/triple EOG blinks.|
+|12 | [BlinkMorse](12_BlinkMorse)| Morse code communication using EOG eye blink detection.|
 
 Compatibility of various boards with Brain-BioAmp sensors
 <table>
