@@ -2,7 +2,7 @@
 
 ![BlinkMorse Preview](Preview.jpeg)
 
-BlinkMorse is an eye-movement (EOG) based assistive interface that converts blinks into Morse code and outputs text using Arduino HID.
+BlinkMorse is an eye-movement (EOG)-based assistive interface that converts blinks into Morse code and outputs text using Arduino HID.
 
 ## How It Works
 
