@@ -16,7 +16,7 @@ ser = serial.Serial(find_responsive_port(), 115200, timeout=1)
 # Timing variable
 timer = milis()
 
-latency =  24
+latency =  24 
                               
 # Infinite loop
 while True:

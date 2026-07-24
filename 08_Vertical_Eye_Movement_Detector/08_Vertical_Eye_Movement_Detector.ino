@@ -1,5 +1,5 @@
-// Fixed Sampling - BioAmp EXG Pill
-// https://github.com/upsidedownlabs/BioAmp-EXG-Pill
+// Eye Movement Detection
+// Code provided by Aman Shrivastava
 
 // Upside Down Labs invests time and resources providing this open source code,
 // please support Upside Down Labs and open-source hardware by purchasing
@@ -25,31 +25,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define SAMPLE_RATE 125
-#define BAUD_RATE 115200
-#define INPUT_PIN A0
+// At Upside Down Labs, we create open-source DIY neuroscience hardware and software.
+// Our mission is to make neuroscience affordable and accessible for everyone.
+// By supporting us with your purchase, you help spread innovation and open science.
+// Thank you for being part of this journey with us!
 
+int range1 = 0;
+int pos = 0;
 
 void setup() {
-	// Serial connection begin
-	Serial.begin(BAUD_RATE);
+  Serial.begin(115200);
 }
 
 void loop() {
-	// Calculate elapsed time
-	static unsigned long past = 0;
-	unsigned long present = micros();
-	unsigned long interval = present - past;
-	past = present;
-
-	// Run timer
-	static long timer = 0;
-	timer -= interval;
-
-	// Sample
-	if(timer < 0){
-		timer += 1000000 / SAMPLE_RATE;
-		int sensor_value = analogRead(INPUT_PIN);
-		Serial.println(sensor_value);
-	}
+  int sensor1 = analogRead(A0);
+  int constrainedInput1 = constrain(sensor1, 350, 650);
+  range1 = map(constrainedInput1, 350, 750, 0, 6);
+  switch(range1) {
+    case 0:
+      Serial.println("Down");
+      delay(1000);
+      break;
+    case 4:
+      Serial.println("Up");
+      delay(1000);
+      break;
+    default:
+      Serial.println("0");
+      break;
+  }
 }

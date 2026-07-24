@@ -2,10 +2,10 @@
 // 1. Arduino UNO R4 Minima
 // 2. Arduino UNO R4 WiFi
 
-// Slide Control for Presentations using EOG (Eye Movement) Detection
-// Double Blink = Next Slide (Right Arrow)
-// Triple Blink = Previous Slide (Left Arrow)
-// Adapted from R4-EXG.ino with HID keyboard functionality
+// EOG Dino Game Controller using Single Blink Detection
+// Single Blink = Space Bar (Jump/Action)
+// Perfect for Chrome Dino Game, Flappy Bird, or any space-triggered games
+// Adapted from Slide-Control.ino with simplified single blink detection
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,8 +34,8 @@
 #include <Keyboard.h>  // HID keyboard library for Arduino R4
 #include <math.h>
 
-// #define DEBUG  // Uncomment this line to enable debugging
-
+// #define DEBUG  // Uncomment this line to enable debugging     
+               
 // ----------------- USER CONFIGURATION -----------------
 #define SAMPLE_RATE       512          // samples per second
 #define BAUD_RATE         115200
@@ -47,8 +47,8 @@
 #define ENVELOPE_WINDOW_SIZE ((ENVELOPE_WINDOW_MS * SAMPLE_RATE) / 1000)
 
 // Blink Detection Thresholds - adjust these based on your setup
-const float BlinkLowerThreshold = 30.0;
-const float BlinkUpperThreshold = 50.0;
+const int BlinkLowerThreshold = 30; 
+const int BlinkUpperThreshold = 50;
 
 // Circular buffer for timing-based sampling
 #define BUFFER_SIZE 64
@@ -57,24 +57,23 @@ int writeIndex = 0;
 int readIndex = 0;
 int samplesAvailable = 0;
 
-// Blink Detection Configuration
-const unsigned long BLINK_DEBOUNCE_MS   = 200;   // minimal spacing between individual blinks
-const unsigned long DOUBLE_BLINK_MS     = 600;   // max time between the two blinks
-const unsigned long TRIPLE_BLINK_MS     = 600;   // max time between second and third blink
-unsigned long lastBlinkTime     = 0;             // time of most recent blink
-unsigned long firstBlinkTime    = 0;             // time of the first blink in a pair
-unsigned long secondBlinkTime   = 0;
-int         blinkCount         = 0;             // how many valid blinks so far (0–3)
+// Single Blink Detection Configuration
+const unsigned long BLINK_DEBOUNCE_MS = 300;   // minimum time between blinks to prevent double-triggering
+unsigned long lastBlinkTime = 0;               // time of most recent blink
 float currentEOGEnvelope = 0;
 
 // HID Command Cooldown to prevent rapid-fire commands
-const unsigned long HID_COOLDOWN_MS = 1000;  // 1 second between HID commands
+const unsigned long HID_COOLDOWN_MS = 250;  // 250ms between space commands (allows ~4 jumps per second)
 unsigned long lastHIDCommandTime = 0;
 
 // EOG Envelope Processing Variables
 float eogEnvelopeBuffer[ENVELOPE_WINDOW_SIZE] = {0};
 int eogEnvelopeIndex = 0;
 float eogEnvelopeSum = 0;
+
+// Game Statistics
+unsigned long totalBlinks = 0;
+unsigned long gameStartTime = 0;
 
 // EOG Statistics for debug display
 #define SEGMENT_SEC 1
@@ -142,48 +141,21 @@ float updateEOGEnvelope(float sample)
 }
 
 // HID Keyboard Functions
-void sendNextSlide() {
+void sendSpaceBar() {
   unsigned long nowMs = millis();
   if ((nowMs - lastHIDCommandTime) >= HID_COOLDOWN_MS) {
-    Keyboard.press(KEY_RIGHT_ARROW);
-    delay(50);  // Hold key for 50ms
-    Keyboard.release(KEY_RIGHT_ARROW);
+    Keyboard.press(' ');  // Press space bar
+    delay(30);            // Hold key for 30ms (shorter for gaming responsiveness)
+    Keyboard.release(' ');
     lastHIDCommandTime = nowMs;
+    totalBlinks++;
     
-    Serial.println("HID: Next Slide (Right Arrow)");
+    Serial.print("JUMP! Blink #");
+    Serial.println(totalBlinks);
     
-    // LED feedback - quick double flash
+    // LED feedback - quick single flash
     digitalWrite(LED_PIN, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN, LOW);
-    delay(100);
-    digitalWrite(LED_PIN, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN, LOW);
-  }
-}
-
-void sendPreviousSlide() {
-  unsigned long nowMs = millis();
-  if ((nowMs - lastHIDCommandTime) >= HID_COOLDOWN_MS) {
-    Keyboard.press(KEY_LEFT_ARROW);
-    delay(50);  // Hold key for 50ms
-    Keyboard.release(KEY_LEFT_ARROW);
-    lastHIDCommandTime = nowMs;
-    
-    Serial.println("HID: Previous Slide (Left Arrow)");
-    
-    // LED feedback - quick triple flash
-    digitalWrite(LED_PIN, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN, LOW);
-    delay(100);
-    digitalWrite(LED_PIN, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN, LOW);
-    delay(100);
-    digitalWrite(LED_PIN, HIGH);
-    delay(100);
+    delay(50);
     digitalWrite(LED_PIN, LOW);
   }
 }
@@ -198,21 +170,31 @@ void setup() {
   // Initialize HID Keyboard
   Keyboard.begin();
   
-  // LED startup sequence
-  digitalWrite(LED_PIN, HIGH);
-  delay(500);
-  digitalWrite(LED_PIN, LOW);
-  delay(300);
-  digitalWrite(LED_PIN, HIGH);
-  delay(300);
-  digitalWrite(LED_PIN, LOW);
+  // LED startup sequence - game ready indicator
+  for(int i = 0; i < 3; i++) {
+    digitalWrite(LED_PIN, HIGH);
+    delay(200);
+    digitalWrite(LED_PIN, LOW);
+    delay(200);
+  }
   
+  gameStartTime = millis();
   lastSegmentTimeMs = millis();  // Initialize the segment timer
   
-  Serial.println("Arduino R4 Slide Controller Ready!");
-  Serial.println("Double Blink = Next Slide");
-  Serial.println("Triple Blink = Previous Slide");
+  Serial.println("=================================");
+  Serial.println("Arduino R4 EOG Dino Game Controller");
+  Serial.println("=================================");
+  Serial.println("Single Blink = Space Bar (Jump)");
+  Serial.println("Perfect for Chrome Dino Game!");
+  Serial.println("");
+  Serial.println("Instructions:");
+  Serial.println("1. Open Chrome and go to chrome://dino/");
+  Serial.println("2. Or disconnect internet and try to browse");
+  Serial.println("3. Press spacebar once to start game");
+  Serial.println("4. Then use blinks to jump!");
+  Serial.println("");
   Serial.println("Starting EOG monitoring at 512 Hz...");
+  Serial.println("Ready to play! 🦕");
 }
 
 void loop() {
@@ -284,50 +266,46 @@ void loop() {
         segmentIndex = 0;
     }
     
-    // ===== BLINK DETECTION AND HID CONTROL =====
+    // ===== SINGLE BLINK DETECTION AND SPACE BAR CONTROL =====
     if (currentEOGEnvelope > BlinkLowerThreshold && 
         currentEOGEnvelope < BlinkUpperThreshold && 
         (nowMs - lastBlinkTime) >= BLINK_DEBOUNCE_MS) {
         
         lastBlinkTime = nowMs;
         
-        if (blinkCount == 0) {
-            // First blink of sequence
-            firstBlinkTime = nowMs;
-            blinkCount = 1;
-        }
-        else if (blinkCount == 1 && (nowMs - firstBlinkTime) <= DOUBLE_BLINK_MS) {
-            // Second blink within time window
-            secondBlinkTime = nowMs;
-            blinkCount = 2;
-        }
-        else if (blinkCount == 2 && (nowMs - secondBlinkTime) <= TRIPLE_BLINK_MS) {
-            // Triple blink detected - Previous Slide
-            Serial.println("Triple blink detected!");
-            sendPreviousSlide();
-            blinkCount = 0;
-        }
-        else {
-            // Either too late or extra blink - restart sequence
-            firstBlinkTime = nowMs;
-            blinkCount = 1;
-        }
+        #ifdef DEBUG
+        Serial.println("Blink detected!");
+        #endif
+        
+        // Send space bar immediately for single blink
+        sendSpaceBar();
     }
     
-    // ===== BLINK TIMEOUT HANDLING =====
-    // If we had 2 blinks but no third arrived in time, treat as double blink
-    if (blinkCount == 2 && (nowMs - secondBlinkTime) > TRIPLE_BLINK_MS) {
-        Serial.println("Double blink detected!");
-        sendNextSlide();
-        blinkCount = 0;
+    // ===== PERIODIC STATUS UPDATES =====
+    static unsigned long lastStatusUpdate = 0;
+    if ((nowMs - lastStatusUpdate) >= 30000) {  // Every 30 seconds
+        unsigned long gameTimeSeconds = (nowMs - gameStartTime) / 1000;
+        float blinksPerMinute = (totalBlinks * 60.0) / (gameTimeSeconds + 1);
+        
+        Serial.println("");
+        Serial.println("=== Game Stats ===");
+        Serial.print("Game Time: ");
+        Serial.print(gameTimeSeconds);
+        Serial.println(" seconds");
+        Serial.print("Total Jumps: ");
+        Serial.println(totalBlinks);
+        Serial.print("Jump Rate: ");
+        Serial.print(blinksPerMinute, 1);
+        Serial.println(" per minute");
+        Serial.print("Current EOG Level: ");
+        Serial.println(currentEOGEnvelope);
+        Serial.println("==================");
+        Serial.println("");
+        
+        lastStatusUpdate = nowMs;
     }
     
-    // If we never got the second blink in time, reset
-    if (blinkCount == 1 && (nowMs - firstBlinkTime) > DOUBLE_BLINK_MS) {
-        blinkCount = 0;
-    }
-    
-    // Optional: Print EOG envelope value for debugging/calibration
+    // ===== REAL-TIME EOG MONITORING (DEBUG) =====
     #ifdef DEBUG
     static unsigned long lastDebugPrint = 0;
     if ((nowMs - lastDebugPrint) >= 1000) {  // Every 1 second

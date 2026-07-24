@@ -28,12 +28,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(ESP32) 
-  // For ESP32 Servo library
-  #include <ESP32Servo.h>
+// At Upside Down Labs, we create open-source DIY neuroscience hardware and software.
+// Our mission is to make neuroscience affordable and accessible for everyone.
+// By supporting us with your purchase, you help spread innovation and open science.
+// Thank you for being part of this journey with us!
+
+#if defined(ESP32)
+// For ESP32 Servo library
+#include <ESP32Servo.h>
 #else
-  // Arduino Servo library
-  #include <Servo.h>
+// Arduino Servo library
+#include <Servo.h>
 #endif
 
 // Samples per second
@@ -46,7 +51,7 @@
 #define INPUT_PIN A2
 
 // Servo pin (Change as per your connection)
-#define SERVO_PIN 2 // Pin2 for Muscle BioAmp Shield v0.3
+#define SERVO_PIN 2  // Pin2 for Muscle BioAmp Shield v0.3
 
 // Blink Threshold value, different for each user
 // Check by plotting EOG envelopee data on Serial plotter
@@ -67,13 +72,13 @@
 // Minimum value increase required to turn on a single LED
 #define EOG_ENVELOPE_DIVIDER 4
 
-const unsigned long BLINK_DEBOUNCE_MS   = 250;   // minimal spacing between individual blinks
-const unsigned long DOUBLE_BLINK_MS     = 600;   // max time between the two blinks
-unsigned long lastBlinkTime     = 0;             // time of most recent blink
-unsigned long firstBlinkTime    = 0;             // time of the first blink in a pair
-int         blinkCount          = 0;             // how many valid blinks so far (0–2)
+const unsigned long BLINK_DEBOUNCE_MS = 250;  // minimal spacing between individual blinks
+const unsigned long DOUBLE_BLINK_MS = 600;    // max time between the two blinks
+unsigned long lastBlinkTime = 0;              // time of most recent blink
+unsigned long firstBlinkTime = 0;             // time of the first blink in a pair
+int blinkCount = 0;                           // how many valid blinks so far (0–2)
 
-float envelopeBuffer[ENVELOPE_WINDOW_SIZE] = {0};
+float envelopeBuffer[ENVELOPE_WINDOW_SIZE] = { 0 };
 int envelopeIndex = 0;
 float envelopeSum = 0;
 float currentEOGEnvelope = 0;
@@ -83,18 +88,18 @@ Servo servo;
 bool flag = 0;
 
 // Muscle BioAmp Shield v0.3 LED pin numbers in-order
-int led_bar[] = {8, 9, 10, 11, 12, 13};
+int led_bar[] = { 8, 9, 10, 11, 12, 13 };
 int total_leds = sizeof(led_bar) / sizeof(led_bar[0]);
 
 void setup() {
-  // Serial connection begin
+  // Initialize serial communication
   Serial.begin(BAUD_RATE);
   // Initialize all the led_bar
-    for (int i = 0; i < total_leds; i++) {
-      pinMode(led_bar[i], OUTPUT);
-    }
-   servo.attach(SERVO_PIN);
-   servo.write(0);
+  for (int i = 0; i < total_leds; i++) {
+    pinMode(led_bar[i], OUTPUT);
+  }
+  servo.attach(SERVO_PIN);
+  servo.write(0);
 }
 
 void loop() {
@@ -109,67 +114,63 @@ void loop() {
   timer -= interval;
 
   // Sample and get envelope
-  if(timer < 0) {
+  if (timer < 0) {
     timer += 1000000 / SAMPLE_RATE;
-   
+
     // RAW Values
     float sensor_value = analogRead(INPUT_PIN);
-    
+    // filtered values
     float filtered = highpass(EOGFilter(Notch(sensor_value)));
-    
+
     // EOG envelopee
     currentEOGEnvelope = EOGEnvelope(abs(filtered));
 
     // Update LED bar graph
-    for(int i = 0; i<total_leds; i++){
-      if(i>(currentEOGEnvelope/EOG_ENVELOPE_DIVIDER - EOG_ENVELOPE_BASELINE)){
-          digitalWrite(led_bar[i], LOW);
+    for (int i = 0; i < total_leds; i++) {
+      if (i > (currentEOGEnvelope / EOG_ENVELOPE_DIVIDER - EOG_ENVELOPE_BASELINE)) {
+        digitalWrite(led_bar[i], LOW);
       } else {
-          digitalWrite(led_bar[i], HIGH);
+        digitalWrite(led_bar[i], HIGH);
       }
     }
-     
+
     // Normal running state processing
     unsigned long nowMs = millis();
 
     // 1) Did we cross threshold and respect per‑blink debounce?
-  if (currentEOGEnvelope > BlinkThreshold && (nowMs - lastBlinkTime) >= BLINK_DEBOUNCE_MS) {
-    lastBlinkTime = nowMs;    // mark this blink
+    if (currentEOGEnvelope > BlinkThreshold && (nowMs - lastBlinkTime) >= BLINK_DEBOUNCE_MS) {
+      lastBlinkTime = nowMs;  // mark this blink
 
-    // 2) Count it
-    if (blinkCount == 0) {
-      // first blink of the pair
-      firstBlinkTime = nowMs;
-      blinkCount = 1;
+      // 2) Count it
+      if (blinkCount == 0) {
+        // first blink of the pair
+        firstBlinkTime = nowMs;
+        blinkCount = 1;
+      } else if (blinkCount == 1 && (nowMs - firstBlinkTime) <= DOUBLE_BLINK_MS) {
+        if (flag == 1) {
+          servo.write(SERVO_OPEN);
+          flag = 0;
+        } else {
+          servo.write(SERVO_CLOSE);
+          flag = 1;
+        }
+        blinkCount = 0;
+      } else {
+        // either too late or extra blink → restart sequence
+        firstBlinkTime = nowMs;
+        blinkCount = 1;
+      }
     }
-    else if (blinkCount == 1 && (nowMs - firstBlinkTime) <= DOUBLE_BLINK_MS) {
-      if(flag == 1){
-        servo.write(SERVO_OPEN);
-        flag = 0;
-      }
-      else {
-        servo.write(SERVO_CLOSE);
-        flag = 1;
-      }
+
+    // 3) Timeout: if we never got the second blink in time, reset
+    if (blinkCount == 1 && (nowMs - firstBlinkTime) > DOUBLE_BLINK_MS) {
       blinkCount = 0;
     }
-    else {
-      // either too late or extra blink → restart sequence
-      firstBlinkTime = nowMs;
-      blinkCount = 1;
-    }
-  }
-
-  // 3) Timeout: if we never got the second blink in time, reset
-  if (blinkCount == 1 && (nowMs - firstBlinkTime) > DOUBLE_BLINK_MS) {
-    blinkCount = 0;
-  } 
     Serial.print(sensor_value);
     // Data seprator
     Serial.print(",");
     // EOG envelope
     Serial.println(currentEOGEnvelope);
-
   }
 }
 
@@ -178,20 +179,19 @@ void loop() {
 // Sampling rate: 512.0 Hz, frequency: [48.0, 52.0] Hz.
 // Filter is order 2, implemented as second-order sections (biquads).
 // Reference: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.butter.html
-float Notch(float input)
-{
+float Notch(float input) {
   float output = input;
   {
-    static float z1, z2; // filter section state
-    float x = output - -1.58696045*z1 - 0.96505858*z2;
-    output = 0.96588529*x + -1.57986211*z1 + 0.96588529*z2;
+    static float z1, z2;  // filter section state
+    float x = output - -1.58696045 * z1 - 0.96505858 * z2;
+    output = 0.96588529 * x + -1.57986211 * z1 + 0.96588529 * z2;
     z2 = z1;
     z1 = x;
   }
   {
-    static float z1, z2; // filter section state
-    float x = output - -1.62761184*z1 - 0.96671306*z2;
-    output = 1.00000000*x + -1.63566226*z1 + 1.00000000*z2;
+    static float z1, z2;  // filter section state
+    float x = output - -1.62761184 * z1 - 0.96671306 * z2;
+    output = 1.00000000 * x + -1.63566226 * z1 + 1.00000000 * z2;
     z2 = z1;
     z1 = x;
   }
@@ -202,13 +202,12 @@ float Notch(float input)
 // Sampling rate: 512.0 Hz, frequency: 45.0 Hz.
 // Filter is order 2, implemented as second-order sections (biquads).
 // Reference: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.butter.html
-float EOGFilter(float input)
-{
+float EOGFilter(float input) {
   float output = input;
   {
-    static float z1, z2; // filter section state
-    float x = output - -1.24200128*z1 - 0.45885207*z2;
-    output = 0.05421270*x + 0.10842539*z1 + 0.05421270*z2;
+    static float z1, z2;  // filter section state
+    float x = output - -1.24200128 * z1 - 0.45885207 * z2;
+    output = 0.05421270 * x + 0.10842539 * z1 + 0.05421270 * z2;
     z2 = z1;
     z1 = x;
   }
@@ -219,13 +218,12 @@ float EOGFilter(float input)
 // Sampling rate: 512.0 Hz, frequency: 5.0 Hz.
 // Filter is order 2, implemented as second-order sections (biquads).
 // Reference: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.butter.html
-float highpass(float input)
-{
+float highpass(float input) {
   float output = input;
   {
-    static float z1, z2; // filter section state
-    float x = output - -1.91327599*z1 - 0.91688335*z2;
-    output = 0.95753983*x + -1.91507967*z1 + 0.95753983*z2;
+    static float z1, z2;  // filter section state
+    float x = output - -1.91327599 * z1 - 0.91688335 * z2;
+    output = 0.95753983 * x + -1.91507967 * z1 + 0.95753983 * z2;
     z2 = z1;
     z1 = x;
   }

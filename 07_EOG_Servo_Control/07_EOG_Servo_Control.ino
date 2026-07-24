@@ -25,6 +25,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// At Upside Down Labs, we create open-source DIY neuroscience hardware and software.
+// Our mission is to make neuroscience affordable and accessible for everyone.
+// By supporting us with your purchase, you help spread innovation and open science.
+// Thank you for being part of this journey with us!
+
+// Include required libraries
 #include <math.h>
 #if defined(ESP32) 
   // For ESP32 Servo library
@@ -34,9 +40,12 @@
   #include <Servo.h>
 #endif
 
+// Samples per second
 #define SAMPLE_RATE 75
+
+// Make sure to set same baud rate on your Serial Moniter/Plotter
 #define BAUD_RATE 115200
-#define INPUT_PIN A2
+#define INPUT_PIN A2 // use the A2 port of the Muscle BioAmp Shield
 #define OUTPUT_PIN 13
 #define DATA_LENGTH 10
 
@@ -53,7 +62,7 @@ unsigned long debounceDelay = 50;
 
 // Servo open & close angles
 #define SERVO_OPEN 10
-#define SERVO_CLOSE 140
+#define SERVO_CLOSE 90
 
 // Servo pin (Change as per your connection)
 #define SERVO_PIN 2 // Pin2 for Muscle BioAmp Shield v0.3
@@ -67,7 +76,7 @@ unsigned long lastGestureTime = 0;
 unsigned long gestureDelay = 240;
 
 void setup() {
-	// Serial connection begin
+	// Initialize serial communication
 	Serial.begin(BAUD_RATE);
 	// Setup Input & Output pin
 	pinMode(INPUT_PIN, INPUT);

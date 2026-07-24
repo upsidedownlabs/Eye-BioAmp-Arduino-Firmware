@@ -1,4 +1,4 @@
-// Eye Blink (EOG) Photo capture using ESP32 - BioAmp EXG Pill
+// Eye Blink Detection (Experimental!) - BioAmp EXG Pill
 // https://github.com/upsidedownlabs/BioAmp-EXG-Pill
 
 // Upside Down Labs invests time and resources providing this open source code,
@@ -25,62 +25,101 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <math.h>
-#include <BleKeyboard.h>
+// At Upside Down Labs, we create open-source DIY neuroscience hardware and software.
+// Our mission is to make neuroscience affordable and accessible for everyone.
+// By supporting us with your purchase, you help spread innovation and open science.
+// Thank you for being part of this journey with us!
 
+// Include the required libraries
+#include <math.h>
+
+// Samples per second
 #define SAMPLE_RATE 75
+
+// Make sure to set the same baud rate on your Serial moniter
 #define BAUD_RATE 115200
-#define INPUT_PIN 25
-#define OUTPUT_PIN 27                                                                  
-#define DATA_LENGTH 20
-BleKeyboard bleKeyboard;
+
+// Input pin 
+#define INPUT_PIN A2 // use the A2 port in the Muscle BioAmp shield
+#define OUTPUT_PIN 13
+#define DATA_LENGTH 10
 
 int data_index = 0;
 bool peak = false;
 
+const int buttonPin = 4;
+const int ledPin = 8;
+int ledState = LOW;
+int buttonState;
+int lastButtonState = LOW;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;
+
 void setup() {
-	// Serial connection begin
+	// Initialize serial communication
 	Serial.begin(BAUD_RATE);
-	// Ble keyboard begin
-	bleKeyboard.begin();
 	// Setup Input & Output pin
-	pinMode(OUTPUT_PIN, OUTPUT);
 	pinMode(INPUT_PIN, INPUT);
-}
+	pinMode(OUTPUT_PIN, OUTPUT);
+
+  pinMode(buttonPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+
+  digitalWrite(ledPin, ledState);
+	
+}      
 
 void loop() {
+
+  int reading = digitalRead(buttonPin);
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer than the debounce
+    // delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+
+      // only toggle the LED if the new button state is HIGH
+      if (buttonState == HIGH) {
+        ledState = !ledState;
+      }
+    }
+  }
 	// Calculate elapsed time
 	static unsigned long past = 0;
 	unsigned long present = micros();
 	unsigned long interval = present - past;
-	past = present;	
+	past = present;
+
 	// Run timer
 	static long timer = 0;
 	timer -= interval;
 
 	// Sample
-  if(timer < 0){
-    timer += 1000000 / SAMPLE_RATE;
-    // Sample and Nomalize input data (-1 to 1)
-    float sensor_value = analogRead(INPUT_PIN);
-    float signal = EOGFilter(sensor_value)/512;
-    // Get peak
-    peak = Getpeak(signal);
-    // Print sensor_value and peak
-    Serial.print(signal);
-    Serial.print(",");
-    Serial.println(peak);
-    Serial.print("Sensor value: ");
-    Serial.print(sensor_value);
-    Serial.println("");
-    // Blink LED on peak
-    digitalWrite(OUTPUT_PIN, peak);
-    //To click photo  
-    if(peak){
-      bleKeyboard.press(KEY_MEDIA_VOLUME_UP);
-      bleKeyboard.release(KEY_MEDIA_VOLUME_UP);
-    }
-  }
+	if(timer < 0){
+		timer += 1000000 / SAMPLE_RATE;
+    	// Sample and Nomalize input data (-1 to 1)
+		float sensor_value = analogRead(INPUT_PIN);
+		float signal = EOGFilter(sensor_value)/512;
+    	// Get peak
+    	peak = Getpeak(signal);
+    	// Print sensor_value and peak
+//    	Serial.print(signal);
+//    	Serial.print(",");
+//    	Serial.println(peak);
+    	// Blink LED on peak
+    	digitalWrite(OUTPUT_PIN, peak);
+      if(peak and ledState) Serial.println(1);
+      else Serial.println(0);
+	}
+ digitalWrite(ledPin, ledState);
+ lastButtonState = reading;
 }
 
 bool Getpeak(float new_sample) {
